@@ -78,6 +78,13 @@ if [[ "$1" == "docker" || "$1" == "singularity" ]]; then
     else # using singularity
         echo "[BiocMAP] Pulling docker images and converting to singularity images..."
         cd $BASE_DIR
+
+        # Set custom Singularity directories to avoid home quota issues
+        export SINGULARITY_CACHEDIR="/projects/p32505/opt/.singularity/cache"
+        export SINGULARITY_TMPDIR="/projects/p32505/opt/.singularity/tmp"
+
+        mkdir -p "$SINGULARITY_CACHEDIR" "$SINGULARITY_TMPDIR"
+
         #  Pull images in advance, since it seems to use very large amounts of
         #  memory to build the '.sif' file from each docker image (we don't
         #  want to allocate large amounts of memory in each process just for
