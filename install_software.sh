@@ -5,15 +5,13 @@
 #
 #  Usage:  bash install_software.sh [installation_type]
 #
-#    installation_type may be "docker", "local", "conda", "jhpce", or
-#    "singularity":
+#    installation_type may be "docker", "local", "conda", or "singularity":
 #        docker:      user plans to run BiocMAP with docker to manage software
 #                     dependencies
 #        local:       user wishes to install all dependencies locally (regardless
 #                     of whether BiocMAP will be run on a cluster or with
 #                     local resources)
 #        conda:       required software is installed within a conda environment
-#        jhpce:       user is setting up BiocMAP on the JHPCE cluster
 #        singularity: user plans to run BiocMAP with singularity to manage
 #                     software dependencies
 
@@ -49,7 +47,7 @@ if [[ "$1" == "docker" || "$1" == "singularity" ]]; then
     sed -i "s|includeConfig 'conf/\(.*\)_half_\(.*\)\.config'|includeConfig 'conf/\1_half_\2.config'\n        includeConfig 'conf/\1_half_$1.config'|" nextflow.config
 
     #  Remove a variable from configs that disables docker/singularity settings
-    sed -i "/using_containers = false/d" conf/second_half_{jhpce,local,sge,slurm}.config
+    sed -i "/using_containers = false/d" conf/second_half_{local,slurm}.config
 
     BASE_DIR=$(pwd)
     mkdir -p "$BASE_DIR/Software/bin"
@@ -99,31 +97,11 @@ if [[ "$1" == "docker" || "$1" == "singularity" ]]; then
             -B $BASE_DIR/test:/usr/local/src/test \
             docker://$R_container \
             Rscript /usr/local/src/scripts/prepare_test_files.R -d $BASE_DIR
-
-        #  Set modules used correctly for JHPCE users
-        sed -i "/module = '.*\/.*'/d" conf/*_half_jhpce.config
-        sed -i "s|cache = 'lenient'|cache = 'lenient'\n    module = 'singularity/3.6.0'|" conf/*_half_jhpce.config
-        sed -i "s|module load nextflow|module load nextflow\nmodule load singularity/3.6.0|" run_*_half_jhpce.sh
     fi
 
     echo "[BiocMAP] Done."
 
-elif [ "$1" == "jhpce" ]; then
-
-    echo "[BiocMAP] User selected set-up at JHPCE. Installing any missing R packages..."
-    module load conda_R/4.3
-    Rscript scripts/install_r_packages.R
-
-    echo "[BiocMAP] Setting up test files..."
-    Rscript scripts/prepare_test_files.R -d $(pwd)
-
-    sed -i "s|ORIG_DIR=.*|ORIG_DIR=$(pwd)|" run_first_half_jhpce.sh
-    sed -i "s|ORIG_DIR=.*|ORIG_DIR=$(pwd)|" run_second_half_jhpce.sh
-
-    echo "[BiocMAP] Done."
-
 elif [ "$1" == "conda" ]; then
-
     BASE_DIR=$(pwd)
     mkdir -p $BASE_DIR/Software/bin
     cd $BASE_DIR/Software/bin
@@ -181,10 +159,8 @@ elif [ "$1" == "conda" ]; then
     #  Point to original repo's main script to facilitate pipeline sharing
     sed -i "s|ORIG_DIR=.*|ORIG_DIR=$(pwd)|" run_*_half_*.sh
 
-    #  Add 'conda' specification to generic process scope; remove use of
-    #  modules in JHPCE configs
+    #  Add 'conda' specification to generic process scope
     sed -i "s|cache = 'lenient'|cache = 'lenient'\n    conda = '$PWD/conda/pipeline_env'|" conf/*_half_*.config
-    sed -i "/module = '.*\/.*'/d" conf/*_half_jhpce.config
 
     echo "[BiocMAP] Done."
 
@@ -335,9 +311,9 @@ elif [ "$1" == "local" ]; then
         echo "[BiocMAP] A java runtime could not be found or accessed. Is it installed and on the PATH? You can install it by running 'apt install default-jre', which requires sudo/ root privileges."
         echo "[BiocMAP] After installing Java, rerun this script to finish the installation procedure."
     fi
-else # neither "docker", "local", "conda", "jhpce", nor "singularity" were chosen
+else # neither "docker", "local", "conda", nor "singularity" were chosen
 
-    echo '[BiocMAP] Error: please specify "docker", "local", "conda", "jhpce", or "singularity" and rerun this script.'
+    echo '[BiocMAP] Error: please specify "docker", "local", "conda", or "singularity" and rerun this script.'
     echo '[BiocMAP]     eg. bash install_software.sh "local"'
     exit 1
 
