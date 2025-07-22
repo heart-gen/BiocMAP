@@ -1,0 +1,6 @@
+Pulling reference genome for ...
+
+ N E X T F L O W   ~  version 25.04.6
+
+Pulling modules/ReferenceSetup ...
+Remote resource not found: https://api.github.com/repos/modules/ReferenceSetup/contents/pull_reference.nf
